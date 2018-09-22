@@ -10,6 +10,6 @@ unix:{#currently we only support win and linux
 }else{
     DEFINES+=IS_WIN
 }
-CONddFIG +=c++11ss
+CONFIG +=c++11
 
 message("common.pri")
