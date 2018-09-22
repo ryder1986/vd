@@ -41,7 +41,7 @@ void MainWindow::slot_camera(PlayerWidget *w, int op, JsonPacket data)
     prt(info,"handle player %d request",index);
     //  thread_lock.lock();
     switch(op){
-    case Camera::OP::INSERT_REGION:
+    case CameraInputData::OP::INSERT_REGION:
     {
         //stop_config();
         RequestPkt pkt(AppInputData::Operation::MODIFY_CAMERA,index,RequestPkt(data).data());
@@ -50,7 +50,7 @@ void MainWindow::slot_camera(PlayerWidget *w, int op, JsonPacket data)
         clt.get_config();
         break;
     }
-    case Camera::OP::DELETE_REGION:
+    case CameraInputData::OP::DELETE_REGION:
     {
         //stop_config();
         RequestPkt pkt(AppInputData::Operation::MODIFY_CAMERA,index,RequestPkt(data).data());
@@ -58,19 +58,19 @@ void MainWindow::slot_camera(PlayerWidget *w, int op, JsonPacket data)
         clt.get_config();
         break;
     }
-    case Camera::OP::MODIFY_REGION:
+    case CameraInputData::OP::MODIFY_REGION:
     {
         RequestPkt pkt(AppInputData::Operation::MODIFY_CAMERA,index,RequestPkt(data).data());
         clt.send_cmd(pkt.data());
         clt.get_config();
         break;
     }
-    case Camera::OP::CHANGE_URL:
+    case CameraInputData::OP::CHANGE_URL:
     {
         JsonPacket p;
         // p.add("Url","rtsp://192.168.1.95:554/av0_1");
         p.add("Url",ui->lineEdit_default_url->text().toStdString());
-        RequestPkt pkt_url(Camera::OP::CHANGE_URL,0,p);
+        RequestPkt pkt_url(CameraInputData::OP::CHANGE_URL,0,p);
 
         RequestPkt pkt(AppInputData::Operation::MODIFY_CAMERA,index,pkt_url.data());
         clt.send_cmd(pkt.data());

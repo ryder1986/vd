@@ -37,14 +37,14 @@ bool Camera::modify(RequestPkt req)
         return false;
     lock.lock();
     switch (req.Operation) {
-    case OP::CHANGE_URL:
+    case CameraInputData::OP::CHANGE_URL:
     {
         UrlJsonDataRequest u(req.Argument);
         change_source(u.Url);
         private_data.change_url(u.Url);
         break;
     }
-    case OP::INSERT_REGION:
+    case CameraInputData::OP::INSERT_REGION:
     {
         vector<DetectRegion*>::iterator it=drs.begin();
         DetectRegion *rg=new DetectRegion(req.Argument);
@@ -52,7 +52,7 @@ bool Camera::modify(RequestPkt req)
         private_data.insert_region(req.Argument,index);
         break;
     }
-    case OP::DELETE_REGION:
+    case CameraInputData::OP::DELETE_REGION:
     {
         if(index<=0)
             return false;
@@ -62,7 +62,7 @@ bool Camera::modify(RequestPkt req)
         private_data.delete_region(index);
         break;
     }
-    case OP::MODIFY_REGION:
+    case CameraInputData::OP::MODIFY_REGION:
     {
         if(index<=0)
             return false;

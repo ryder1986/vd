@@ -782,20 +782,20 @@ public slots:
         if(level2){
             switch(level2){
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_C4:
-                set_processor(LABLE_PROCESSOR_C4);
+                processor_menu_selection(LABLE_PROCESSOR_C4);
                 break;
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_DUMMY:
-                set_processor(LABLE_PROCESSOR_DUMMY);
+                processor_menu_selection(LABLE_PROCESSOR_DUMMY);
                 break;
 #ifdef WITH_CUDA
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_FVD:
-                set_processor(LABLE_PROCESSOR_FVD);
+                processor_menu_selection(LABLE_PROCESSOR_FVD);
                 break;
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_PVD:
-                set_processor(LABLE_PROCESSOR_PVD);
+                processor_menu_selection(LABLE_PROCESSOR_PVD);
                 break;
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_MVD:
-                set_processor(LABLE_PROCESSOR_MVD);
+                processor_menu_selection(LABLE_PROCESSOR_MVD);
                 break;
 #endif
             default:break;
@@ -817,14 +817,9 @@ public slots:
     {
         DetectRegionInputData drid( get_region_test_data(get_dummy_test_data().data(),LABLE_PROCESSOR_DUMMY));
         vector <DetectRegionInputData >::iterator begin=cfg.DetectRegion.begin();
-
-        RequestPkt pkt(
-                    Camera::OP::INSERT_REGION,cfg.DetectRegion.size(),
-                    drid.data()
-                    );
+        RequestPkt pkt(CameraInputData::OP::INSERT_REGION,cfg.DetectRegion.size(),drid.data());
         cfg.DetectRegion.insert(begin+cfg.DetectRegion.size(),drid.data());
-
-        signal_camera(this,Camera::OP::INSERT_REGION,pkt.data());
+        signal_camera(this,CameraInputData::OP::INSERT_REGION,pkt.data());
         prt(info,"add region");
     }
     void del_region(bool)
@@ -832,17 +827,17 @@ public slots:
         prt(info,"del region %d ",selected_region_index);
         if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
             return;
-        RequestPkt pkt(Camera::OP::DELETE_REGION,selected_region_index,JsonPacket());
+        RequestPkt pkt(CameraInputData::OP::DELETE_REGION,selected_region_index,JsonPacket());
         vector <DetectRegionInputData >::iterator begin=cfg.DetectRegion.begin();
         cfg.DetectRegion.erase(begin+selected_region_index-1);
 
-        signal_camera(this,Camera::OP::DELETE_REGION,pkt.data());
+        signal_camera(this,CameraInputData::OP::DELETE_REGION,pkt.data());
     }
 
     void set_url(bool)
     {
         JsonPacket p;
-        signal_camera(this,Camera::OP::CHANGE_URL,p);
+        signal_camera(this,CameraInputData::OP::CHANGE_URL,p);
 
     }
 #ifdef WITH_CUDA
@@ -1000,7 +995,7 @@ public slots:
     {
         C4ProcessorInputData d(8,0.7);   return d;
     }
-    void set_processor(string processor_label)
+    void processor_menu_selection(string processor_label)
     {
 
         if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
@@ -1028,11 +1023,13 @@ public slots:
             processor_pkt=get_mvd_test_data().data();
         }
 #endif
+        ///// change remote config
         ProcessorDataJsonDataRequest pd(processor_label,processor_pkt);
         RequestPkt req(DetectRegion::OP::CHANGE_PROCESSOR,0,pd.data());
-        RequestPkt pkt(Camera::OP::MODIFY_REGION,selected_region_index,req.data());
-        signal_camera(this,Camera::OP::MODIFY_REGION,pkt.data());
-        //////////
+        RequestPkt pkt(CameraInputData::OP::MODIFY_REGION,selected_region_index,req.data());
+        signal_camera(this,CameraInputData::OP::MODIFY_REGION,pkt.data());
+
+        ///// change local config
         DetectRegionInputData di= cfg.DetectRegion[selected_region_index-1];
         di.set_processor(processor_label,processor_pkt);
         cfg.set_region(di.data(),selected_region_index);
@@ -1043,32 +1040,32 @@ public slots:
         if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
             return;
 
-        set_processor(LABLE_PROCESSOR_DUMMY);
+        processor_menu_selection(LABLE_PROCESSOR_DUMMY);
     }
     void set_processor_c4(bool checked)
     {
         if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
             return;
-        set_processor(LABLE_PROCESSOR_C4);
+        processor_menu_selection(LABLE_PROCESSOR_C4);
     }
 #ifdef WITH_CUDA
     void set_processor_pvd(bool checked)
     {
         if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
             return;
-        set_processor(LABLE_PROCESSOR_PVD);
+        processor_menu_selection(LABLE_PROCESSOR_PVD);
     }
     void set_processor_fvd(bool checked)
     {
         if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
             return;
-        set_processor(LABLE_PROCESSOR_FVD);
+        processor_menu_selection(LABLE_PROCESSOR_FVD);
     }
     void set_processor_mvd(bool checked)
     {
         if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
             return;
-        set_processor(LABLE_PROCESSOR_MVD);
+        processor_menu_selection(LABLE_PROCESSOR_MVD);
     }
 #endif
     void set_region(bool)
@@ -1080,8 +1077,8 @@ public slots:
         vector <VdPoint  > vers=tmp.ExpectedAreaVers;
         AreaVersJsonDataRequest vs(vers);
         RequestPkt r_pkt(DetectRegion::OP::CHANGE_RECT,0,vs.data());
-        RequestPkt pkt(Camera::OP::MODIFY_REGION,selected_region_index,r_pkt.data());
-        signal_camera(this,Camera::OP::MODIFY_REGION,pkt.data());
+        RequestPkt pkt(CameraInputData::OP::MODIFY_REGION,selected_region_index,r_pkt.data());
+        signal_camera(this,CameraInputData::OP::MODIFY_REGION,pkt.data());
     }
 
     void set_region_data(bool)
@@ -1091,8 +1088,8 @@ public slots:
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
         DetectRegionInputData tmp=detect_regions[selected_region_index-1];
         RequestPkt r_pkt(DetectRegion::OP::MODIFY_PROCESSOR,0,tmp.ProcessorData);
-        RequestPkt pkt(Camera::OP::MODIFY_REGION,selected_region_index,r_pkt.data());
-        signal_camera(this,Camera::OP::MODIFY_REGION,pkt.data());
+        RequestPkt pkt(CameraInputData::OP::MODIFY_REGION,selected_region_index,r_pkt.data());
+        signal_camera(this,CameraInputData::OP::MODIFY_REGION,pkt.data());
     }
 
     void timeout()

@@ -7,12 +7,7 @@
 class Camera:public VdData<CameraInputData>
 {
 public:
-    enum OP{
-        CHANGE_URL=1,
-        INSERT_REGION,
-        DELETE_REGION,
-        MODIFY_REGION
-    };
+
     function <void(Camera *,CameraOutputData)>callback_result;
 public:
     Camera(CameraInputData cfg,function <void(Camera *,CameraOutputData)>fc):VdData(cfg),quit(false),callback_result(fc)

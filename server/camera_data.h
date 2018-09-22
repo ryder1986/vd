@@ -6,6 +6,12 @@
 class CameraInputData:public JsonData
 {
 public:
+    enum OP{
+        CHANGE_URL=1,
+        INSERT_REGION,
+        DELETE_REGION,
+        MODIFY_REGION
+    };
     string Url;
     vector <DetectRegionInputData >DetectRegion;
     CameraInputData(JsonPacket pkt):JsonData(pkt)
