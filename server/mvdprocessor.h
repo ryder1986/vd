@@ -4,8 +4,8 @@
 #include "videoprocessor.h"
 #include "jsonpacket.h"
 #include "algorithm.h"
-#define TEST_CLIENT
-#undef TEST_CLIENT
+
+
 //#define  SAVE_VIDEO
 #ifdef SAVE_VIDEO
 Mat imgSave;
@@ -18,7 +18,9 @@ public:
     {
         int i = 0, j = 0;
 
+#ifdef WITH_VIDEO_CARD
         p_cfg = alg_mem_malloc();
+
         MvdProcessorInputData da(pkt);
 
         //pvd
@@ -65,21 +67,26 @@ public:
             }
 
         }
-#ifndef TEST_CLIENT
+
         ArithInit(p_cfg->pCfgs, DetLine, &p_cfg->pDetectCfg->FvdDetectCfg, p_cfg->pParams);
+
+
 #endif
     }
     ~MvdProcessor()
     {
         prt(info,"############free start");
-#ifndef TEST_CLIENT
+
+#ifdef WITH_VIDEO_CARD
         alg_mem_free(p_cfg);
 #endif
+
         prt(info,"############free done");
     }
 
     virtual bool modify_processor(JsonPacket p)
     {
+        #ifdef WITH_VIDEO_CARD
         int i,j;
         MvdProcessorInputData da(p);
         //pvd
@@ -126,9 +133,11 @@ public:
             }
 
         }
-#ifndef TEST_CLIENT
+
+
         RestParams(p_cfg->pCfgs, DetLine, &p_cfg->pDetectCfg->FvdDetectCfg, p_cfg->pParams);//ÖØÖÃ²ÎÊý
 #endif
+
         return true;
     }
     virtual bool process_whole_pic(Mat img_src,JsonPacket &pkt,Rect rct)
@@ -147,9 +156,11 @@ public:
         r1.y=rct.y;
         r1.width=rct.width;
         r1.height=rct.height;
-#ifndef TEST_CLIENT
-        ArithProc_whole(&img, r1, p_cfg->p_outbuf, p_cfg->pCfgs, p_cfg->pParams);
+
+#ifdef WITH_VIDEO_CARD
+      //  ArithProc_whole(&img, r1, p_cfg->p_outbuf, p_cfg->pCfgs, p_cfg->pParams);
 #endif
+
         //pvd
         int PersonFlow1 = p_cfg->p_outbuf->PVDoutbuf.uPersonSum[0];
         int PersonFlow2 = p_cfg->p_outbuf->PVDoutbuf.uPersonSum[1];
@@ -376,6 +387,7 @@ public:
         int x = 0, y = 0, w = 0, h = 0, c;
         string names;
         IplImage img = IplImage(img_src);
+#ifdef WITH_VIDEO_CARD
         ArithProc(&img, p_cfg->p_outbuf, p_cfg->pCfgs, p_cfg->pParams);
 
         //pvd
@@ -440,7 +452,9 @@ public:
                                    PersonFlow2,
                                    CurrentPersionCount);
         pkt=out.data();
+#endif
     }
+
 };
 
 

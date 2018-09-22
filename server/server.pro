@@ -1,9 +1,14 @@
 include(common.pri)
-#CONFIG+=WITH_CUDA
+CONFIG+=WITH_CUDA
 
 WITH_CUDA{
     DEFINES+=WITH_CUDA
-    LIBS+=-L/lib -ldarknet
+    WITH_VIDEO_CARD{
+        LIBS+=-L/lib -ldarknet
+        DEFINES+=WITH_VIDEO_CARD
+    }else{
+        message(dummy video card)
+    }
     HEADERS+= fvdprocessor.h \
     pvdprocessor.h    mvdprocessor.h
     SOURCES+= fvdprocessor.cpp \

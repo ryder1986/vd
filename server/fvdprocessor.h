@@ -12,10 +12,11 @@ public:
     FvdProcessor(JsonPacket pkt)
     {
         int i = 0, j = 0;
-
+#ifdef WITH_VIDEO_CARD
         p_cfg = alg_mem_malloc();
-        FvdProcessorInputData da(pkt);
 
+#endif
+        FvdProcessorInputData da(pkt);
         for(i = 0; i < da.BasicCoil.size(); i++)
         {
             p_cfg->pDetectCfg->FvdDetectCfg.BasicCoil[i].x = da.BasicCoil[i].x;
@@ -52,13 +53,16 @@ public:
             }
 
         }
-
+#ifdef WITH_VIDEO_CARD
         FvdArithInit(&p_cfg->pDetectCfg->FvdDetectCfg, p_cfg->pCfgs, p_cfg->pParams);
+#endif
     }
     ~FvdProcessor()
     {
         prt(info,"############free start");
+#ifdef WITH_VIDEO_CARD
         alg_mem_free(p_cfg);
+#endif
         prt(info,"############free done");
     }
 
@@ -68,7 +72,9 @@ public:
         int x = 0, y = 0, w = 0, h = 0, c;
         string names;
         IplImage img = IplImage(img_src);
+#ifdef WITH_VIDEO_CARD
         FvdArithProc(&img, &p_cfg->p_outbuf->FVDoutbuf, p_cfg->pCfgs, p_cfg->pParams);
+#endif
         vector <ObjectRect> FvdDetectedObjects;
         for( i = 0; i <p_cfg->p_outbuf->FVDoutbuf.uObjNum; i++)
         {
@@ -89,7 +95,7 @@ public:
 
         vector <LaneOutputJsonData> LaneOutputData;
         for( i = 0;  i <p_cfg->p_outbuf->FVDoutbuf.uLaneNum; i++)
-         {
+        {
             int laneNo, queLen, vehiNum, flow, speed,Farcarexist, Nearcarexist;
             laneNo = p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].LaneNo;
             queLen = p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].uVehicleQueueLength;
@@ -99,14 +105,14 @@ public:
             VdPoint pt1( p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].QueLine[0].x,
                     p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].QueLine[0].y);
             VdPoint pt2(p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].QueLine[1].x,
-                p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].QueLine[1].y );
+                    p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].QueLine[1].y );
 
-			Farcarexist = p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].IsCarInTailFlag;
-			Nearcarexist = p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].bFlowRegionState;
+            Farcarexist = p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].IsCarInTailFlag;
+            Nearcarexist = p_cfg->p_outbuf->FVDoutbuf.uEachLaneData[i].bFlowRegionState;
 
-			LaneOutputJsonData detLaneData = LaneOutputJsonData(laneNo, queLen, pt1, pt2, vehiNum, flow, speed
-				,p_cfg->p_outbuf->FVDoutbuf.uActualDetectLength[i],
-				p_cfg->p_outbuf->FVDoutbuf.uActualTailLength[i],Farcarexist,Nearcarexist);
+            LaneOutputJsonData detLaneData = LaneOutputJsonData(laneNo, queLen, pt1, pt2, vehiNum, flow, speed
+                                                                ,p_cfg->p_outbuf->FVDoutbuf.uActualDetectLength[i],
+                                                                p_cfg->p_outbuf->FVDoutbuf.uActualTailLength[i],Farcarexist,Nearcarexist);
             LaneOutputData.push_back(detLaneData);
         }
         vector <DegreeJsonData> DegreeData; // on  lane points

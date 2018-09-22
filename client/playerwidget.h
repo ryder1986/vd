@@ -509,14 +509,17 @@ public:
             bool highlight=false;
             for(LaneDataJsonData r: data.LaneData)
             {
-                if(mvd_current_data.LaneOutputData.size()>0)
-                    if(mvd_current_data.LaneOutputData[lane_loop-1].FarCarExist){
-                        //prt(info,"######## far car exit");
-                    }
+                //                if(!mvd_current_data.LaneOutputData.size())
+                //                    continue;
+                //                if(mvd_current_data.LaneOutputData.size()>0)
+                //                    if(mvd_current_data.LaneOutputData[lane_loop-1].FarCarExist){
+                //                        //prt(info,"######## far car exit");
+                //                    }
                 QVector<QPoint> ps;
-
-                if((region_data_picked&&lane_index==lane_loop&&point_index<=12&&point_index>8)||(lane_index==lane_loop&&mvd_current_data.LaneOutputData[lane_loop-1].FarCarExist))
-                    highlight=true;
+                if(mvd_current_data.LaneOutputData.size()==data.LaneData.size())
+                    if((region_data_picked&&lane_index==lane_loop&&point_index<=12&&point_index>8)||
+                            (lane_index==lane_loop&&mvd_current_data.LaneOutputData[lane_loop-1].FarCarExist))
+                        highlight=true;
                 for(VdPoint v:r.FarArea){ps.push_back(QPoint(v.x+offset_x,v.y+offset_y));  pt.setPen(red_pen2());pt.drawEllipse(QPoint(v.x+offset_x,v.y+offset_y),1,1);pt.setPen(blue_pen4());}
                 if(highlight){
                     pt.setPen(red_pen2());
@@ -531,8 +534,9 @@ public:
                 highlight=false;
 
                 for(VdPoint v:r.NearArea){ps.push_back(QPoint(v.x+offset_x,v.y+offset_y));pt.setPen(red_pen2());pt.drawEllipse(QPoint(v.x+offset_x,v.y+offset_y),1,1);pt.setPen(blue_pen4());}
-                if((region_data_picked&&lane_index==lane_loop&&point_index<=8&&point_index>4)||(lane_index==lane_loop&&mvd_current_data.LaneOutputData[lane_loop-1].NearCarExist))
-                    highlight=true;
+                if(mvd_current_data.LaneOutputData.size()==data.LaneData.size())
+                    if((region_data_picked&&lane_index==lane_loop&&point_index<=8&&point_index>4)||(lane_index==lane_loop&&mvd_current_data.LaneOutputData[lane_loop-1].NearCarExist))
+                        highlight=true;
                 if(highlight){
                     pt.setPen(red_pen2());
                     // prt(info,"highlight near");
@@ -547,9 +551,9 @@ public:
 
 
                 for(VdPoint v:r.LaneArea){ps.push_back(QPoint(v.x+offset_x,v.y+offset_y));pt.setPen(red_pen2());pt.drawEllipse(QPoint(v.x+offset_x,v.y+offset_y),1,1);pt.setPen(blue_pen4());}
-
-                if(region_data_picked&&lane_index==lane_loop&&point_index<=4&&point_index>0)
-                    highlight=true;
+                if(mvd_current_data.LaneOutputData.size()==data.LaneData.size())
+                    if(region_data_picked&&lane_index==lane_loop&&point_index<=4&&point_index>0)
+                        highlight=true;
                 if(highlight){
                     pt.setPen(red_pen2());
                     // prt(info,"highlight lane");
@@ -725,10 +729,11 @@ protected:
                 break;
 
             }
-            int tmpx,tmpy;
+            int off_x,off_y;
 
-            draw_process_output( img_painter,p.SelectedProcessor, output_data.DetectionResult[i],tmpx,tmpy);
-            draw_process_input( img_painter,p.SelectedProcessor, p.ProcessorData,tmpx,tmpy);
+            draw_process_output( img_painter,p.SelectedProcessor, output_data.DetectionResult[i],off_x,off_y);
+            get_min_point( p.ExpectedAreaVers,off_x,off_y);
+            draw_process_input( img_painter,p.SelectedProcessor, p.ProcessorData,off_x,off_y);
             int selected_r=0;
             if(region_ver_picked&&i==selected_region_index-1)
                 selected_r=1;
@@ -800,7 +805,7 @@ public slots:
     }
     void hide_menu()
     {
-            prt(info,"hide menu");
+        prt(info,"hide menu");
         region_ver_picked=false;
         mn.set_checkable(false);
     }
@@ -1198,13 +1203,13 @@ public slots:
     void mouseReleaseEvent(QMouseEvent *e)
     {
         prt(info,"mouse release");
-//        switch (e->button()) {
-//        case Qt::MouseButton::RightButton:
-//        {prt(info,"right button");}
-//            break;
-//        default:
-//            break;
-//        }
+        //        switch (e->button()) {
+        //        case Qt::MouseButton::RightButton:
+        //        {prt(info,"right button");}
+        //            break;
+        //        default:
+        //            break;
+        //        }
         if(region_ver_picked&&(e->button()==Qt::MouseButton::LeftButton)){
             emit cam_data_change(cfg,this);
             set_region(true);
@@ -1224,7 +1229,7 @@ public slots:
             region_data_picked=false;
         }
     }
-//
+    //
     void mouseDoubleClickEvent(QMouseEvent *e)
     {
 
@@ -1274,7 +1279,7 @@ public slots:
         else
             emit click_event(this,ClickEvent::SHOW_ALL);
     }
-//
+    //
 private:
     int double_click_flag;
     QPen blue_pen1()
