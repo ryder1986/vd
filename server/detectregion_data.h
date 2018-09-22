@@ -2,7 +2,28 @@
 #define DETECTREGION_DATA_H
 #include "tool.h"
 #include "jsonpacket.h"
-class DetectRegionInputData:public JsonData
+class DataEvent
+{
+public:
+    enum Event{
+        VerTriggered=1,
+        VersTriggered
+    };
+    DataEvent() {}
+public:
+    virtual bool start_event(VdPoint pnt)=0;
+    virtual bool process_event(VdPoint pnt)=0;
+    void end_event()
+    {
+       triggered=false;
+    }
+private:
+    int flag;
+    bool triggered;
+    VdPoint ori_pnt;
+    int point_index;
+};
+class DetectRegionInputData:public JsonData,public DataEvent
 {
 
 public:
@@ -59,6 +80,59 @@ public:
         ENCODE_JSONDATA_ARRAY_MEM(ExpectedAreaVers);
         ENCODE_STRING_MEM(SelectedProcessor);
         ENCODE_PKT_MEM(ProcessorData);
+    }
+
+    inline bool p_on_ver(VdPoint pnt)
+    {
+        point_index=2;
+        return true;
+    }
+
+    inline bool p_on_line(VdPoint pnt)
+    {
+        return true;
+    }
+
+    virtual bool start_event(VdPoint pnt)
+    {
+        if(p_on_ver(pnt)){
+            triggered=true;
+            ori_pnt=pnt;
+            flag=VerTriggered;
+            return true;
+        }
+        if(p_on_line(pnt)){
+            triggered=true;
+            ori_pnt=pnt;
+            flag=VersTriggered;
+            return true;
+        }
+        return false;
+    }
+    virtual bool process_event(VdPoint pnt)
+    {
+
+        if(triggered){
+            switch (flag) {
+            case Event::VerTriggered:
+                ExpectedAreaVers[point_index]=pnt;
+                break;
+            case Event::VersTriggered:
+                int offx=pnt.x-ori_pnt.x;
+                int offy=pnt.y-ori_pnt.y;
+                ori_pnt=pnt;
+                int i=0;
+                int sz=ExpectedAreaVers.size();
+                for(i=0;i<sz;i++){
+                    ExpectedAreaVers[i]=VdPoint(ExpectedAreaVers[i].x+offx,ExpectedAreaVers[i].y+offy);
+                }
+                break;
+            default:
+                break;
+            }
+            encode();
+        }
+
     }
 
 };

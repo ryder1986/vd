@@ -3,7 +3,7 @@
 #include "tool.h"
 #include "jsonpacket.h"
 #include "detectregion_data.h"
-class CameraInputData:public JsonData
+class CameraInputData:public JsonData,public DataEvent
 {
 public:
     enum OP{
@@ -61,6 +61,46 @@ public:
     {
         ENCODE_STRING_MEM(Url);
         ENCODE_JSONDATA_ARRAY_MEM(DetectRegion);
+    }
+    virtual bool start_event(VdPoint pnt)
+    {
+        int index=0;
+        for(DetectRegionInputData r:DetectRegion){
+            index++;
+            if(r.start_event(pnt)){
+                triggered=true;
+                point_index=index;
+
+                return true;
+            }
+
+        }
+        return false;
+    }
+    virtual bool process_event(VdPoint pnt)
+    {
+
+        if(triggered){
+            switch (flag) {
+            case Event::VerTriggered:
+                ExpectedAreaVers[point_index]=pnt;
+                break;
+            case Event::VersTriggered:
+                int offx=pnt.x-ori_pnt.x;
+                int offy=pnt.y-ori_pnt.y;
+                ori_pnt=pnt;
+                int i=0;
+                int sz=ExpectedAreaVers.size();
+                for(i=0;i<sz;i++){
+                    ExpectedAreaVers[i]=VdPoint(ExpectedAreaVers[i].x+offx,ExpectedAreaVers[i].y+offy);
+                }
+                break;
+            default:
+                break;
+            }
+            encode();
+        }
+
     }
 };
 

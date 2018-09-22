@@ -170,6 +170,7 @@ public slots:
 signals:
     void action_done(int level1,int level2);
 };
+
 #ifdef WITH_OPENGL
 class PlayerWidget : public QOpenGLWidget
         #else
@@ -468,11 +469,23 @@ public:
     {
         return QPoint(p.x()*img.width()/this->width(),p.y()*img.height()/this->height());
     }
+    inline VdPoint QPoint_2_VdPoint(QPoint p)
+    {
+        return VdPoint(p.x(),p.y());
+    }
     void draw_process_input(QPainter &pt,string processor,JsonPacket out,int &offset_x,int &offset_y)
     {
         pt.setPen(blue_pen2());
 
         if(processor==LABLE_PROCESSOR_C4){
+            C4ProcessorInputData data(out);
+            if(data.DetectLine.size()==2){
+                VdPoint point_begin=data.DetectLine[0];
+                QPoint pb(point_begin.x+offset_x,point_begin.y+offset_y);
+                VdPoint end_begin=data.DetectLine[1];
+                QPoint pe(end_begin.x+offset_x,end_begin.y+offset_y);
+                pt.drawLine(pb,pe);
+            }
         }
         if(processor==LABLE_PROCESSOR_DUMMY){
 
@@ -993,7 +1006,11 @@ public slots:
     }
     static C4ProcessorInputData get_c4_test_data()
     {
-        C4ProcessorInputData d(8,0.7);   return d;
+        vector <VdPoint> ps;
+        ps.push_back(VdPoint(100,100));
+        ps.push_back(VdPoint(200,200));
+        C4ProcessorInputData d(8,0.7,ps);
+        return d;
     }
     void processor_menu_selection(string processor_label)
     {
@@ -1110,6 +1127,11 @@ public slots:
     void mouseMoveEvent(QMouseEvent *e)
     {
         QPoint p1=map_point(e->pos());
+
+        for(int i=0;i<cfg.DetectRegion.size();i++){
+            cfg.DetectRegion[i].process_event(QPoint_2_VdPoint(map_point(e->pos())));
+        }
+
         if(region_ver_picked){
             if(selected_region_index>0&&selected_point_index>0&&\
                     selected_region_index<=cfg.DetectRegion.size()){
@@ -1158,9 +1180,11 @@ public slots:
     void mousePressEvent(QMouseEvent *e)
     {
         prt(info,"mouse press");
+
         vector <DetectRegionInputData >detect_regions;
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
         for(int i=0;i<detect_regions.size();i++){
+            detect_regions[i].start_event(QPoint_2_VdPoint(map_point(e->pos())));
             // match region vers
             vector <VdPoint> pnts(detect_regions[i].ExpectedAreaVers.begin(),detect_regions[i].ExpectedAreaVers.end());
             int point_index=p_on_vs(pnts,map_point(e->pos()));
@@ -1199,6 +1223,11 @@ public slots:
     }
     void mouseReleaseEvent(QMouseEvent *e)
     {
+
+        for(int i=0;i<cfg.DetectRegion.size();i++){
+            cfg.DetectRegion[i].end_event();
+        }
+
         prt(info,"mouse release");
         //        switch (e->button()) {
         //        case Qt::MouseButton::RightButton:
@@ -1345,10 +1374,6 @@ private:
     bool region_ver_picked;
     bool region_line_picked;
     bool region_data_picked;
-
-
-    QPoint ori_point;
-    QPoint maped_point;
 
     int selected_region_index;
     int selected_point_index;
