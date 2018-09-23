@@ -6,6 +6,8 @@ WITH_CUDA{
     WITH_VIDEO_CARD{
         LIBS+=-L/lib -ldarknet
         DEFINES+=WITH_VIDEO_CARD
+    INCLUDEPATH+=/usr/include/python2.7
+    LIBS+=-lpython2.7
     }else{
         message(dummy video card)
     }
@@ -13,8 +15,6 @@ WITH_CUDA{
     pvdprocessor.h    mvdprocessor.h
     SOURCES+= fvdprocessor.cpp \
     pvdprocessor.cpp
-    INCLUDEPATH+=/usr/include/python2.7
-    LIBS+=-lpython2.7
 }else{
     #message("no cuda")
     # LIBS+=-lopencv_imgcodecs

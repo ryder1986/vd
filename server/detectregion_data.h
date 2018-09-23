@@ -17,7 +17,7 @@ public:
     {
        triggered=false;
     }
-private:
+public:
     int flag;
     bool triggered;
     VdPoint ori_pnt;
@@ -118,6 +118,7 @@ public:
                 ExpectedAreaVers[point_index]=pnt;
                 break;
             case Event::VersTriggered:
+            {
                 int offx=pnt.x-ori_pnt.x;
                 int offy=pnt.y-ori_pnt.y;
                 ori_pnt=pnt;
@@ -127,11 +128,13 @@ public:
                     ExpectedAreaVers[i]=VdPoint(ExpectedAreaVers[i].x+offx,ExpectedAreaVers[i].y+offy);
                 }
                 break;
+            }
             default:
                 break;
             }
             encode();
         }
+        return true;
 
     }
 

@@ -1394,7 +1394,7 @@ private:
     int paint_tick;
     int paint_tick_old;
 
-
+    QPoint ori_point;
 #ifdef WITH_CUDA
     MvdProcessorOutputData mvd_current_data;
 #endif
