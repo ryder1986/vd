@@ -2,6 +2,7 @@
 #define DETECTREGION_DATA_H
 #include "tool.h"
 #include "jsonpacket.h"
+#include "videoprocessor.h"
 class DataEvent
 {
 public:
@@ -136,6 +137,25 @@ public:
         }
         return true;
 
+    }
+    void draw(function <void(VdPoint start,VdPoint end)>drawline_callback)
+    {
+
+        int label=0;
+
+        if(SelectedProcessor==LABLE_PROCESSOR_C4) {
+            C4ProcessorInputData c4data( ProcessorData);
+             c4data.draw(drawline_callback);
+        }
+
+
+//        int i=0;
+//        int sz=DetectRegion.size();
+//        for(i=0;i<sz;i++){
+
+//          DetectRegionInputData dr=  DetectRegion[i];
+
+//        }
     }
 
 };

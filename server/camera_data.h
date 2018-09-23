@@ -88,6 +88,16 @@ public:
        }
             return true;
     }
+    void draw(function <void(VdPoint start,VdPoint end)>drawline_callback)
+    {
+        int i=0;
+        int sz=DetectRegion.size();
+        for(i=0;i<sz;i++){
+
+          DetectRegionInputData dr=DetectRegion[i];
+          dr.draw(drawline_callback);
+        }
+    }
 };
 
 class CameraOutputData:public JsonData

@@ -232,6 +232,13 @@ public:
         ENCODE_DOUBLE_MEM(Ratio);
         ENCODE_JSONDATA_ARRAY_MEM(DetectLine);
     }
+
+    void draw(function <void(VdPoint start,VdPoint end)>drawline_callback)
+    {
+        if(DetectLine.size()==2)
+        drawline_callback (DetectLine[0],DetectLine[1]);
+
+    }
 };
 
 class PvdProcessorInputData:public JsonData{

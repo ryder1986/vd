@@ -478,6 +478,7 @@ public:
         pt.setPen(blue_pen2());
 
         if(processor==LABLE_PROCESSOR_C4){
+#if 0
             C4ProcessorInputData data(out);
             if(data.DetectLine.size()==2){
                 VdPoint point_begin=data.DetectLine[0];
@@ -486,6 +487,7 @@ public:
                 QPoint pe(end_begin.x+offset_x,end_begin.y+offset_y);
                 pt.drawLine(pb,pe);
             }
+#endif
         }
         if(processor==LABLE_PROCESSOR_DUMMY){
 
@@ -683,6 +685,13 @@ public:
 
     }
 protected:
+    void draw_line(VdPoint s,VdPoint e)
+    {
+        dev->paintEngine()
+         QPainter img_painter1(dev);
+         img_painter1.drawLine(QPoint(s.x,s.y),QPoint(e.x,e.y));
+    }
+
     void paintEvent(QPaintEvent *)
     {
         lock.lock();
@@ -703,6 +712,7 @@ protected:
         }
 
         QPainter img_painter(&img);
+        dev=img_painter.device();
         QString fps(QString::number(output_data_fps_result));
         QString url(QString(cfg.Url.data()));
         img_painter.setPen(blue_pen3());
@@ -754,6 +764,10 @@ protected:
                 selected_r=0;
             draw_detect_area(vector<VdPoint>(p.ExpectedAreaVers.begin(),p.ExpectedAreaVers.end()),img_painter,selected_r);
         }
+
+        cfg.draw(bind(&PlayerWidget::draw_line,
+                      this,placeholders::_1,
+                      placeholders::_2));
 
         if(!img.isNull()){
             this_painter.drawImage(QRect(0,0,this->width(),this->height()),img);
@@ -1395,6 +1409,9 @@ private:
     int paint_tick_old;
 
     QPoint ori_point;
+
+    QPainter painter_img;
+    QPaintDevice * dev;
 #ifdef WITH_CUDA
     MvdProcessorOutputData mvd_current_data;
 #endif
