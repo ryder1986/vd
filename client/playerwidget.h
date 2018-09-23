@@ -201,9 +201,9 @@ public:
     {
         connect(&mn,SIGNAL(action_done(int,int)),this,SLOT(handle_menu(int,int)));
         loop=0;
-        region_ver_picked=false;
-        region_line_picked=false;
-        region_data_picked=false;
+        //        region_ver_picked=false;
+        //        region_line_picked=false;
+        //        region_data_picked=false;
         cfg=data;
         frame_rate=0;
         tick_timer=new QTimer();
@@ -349,6 +349,7 @@ public:
 
     }
 #ifdef WITH_CUDA
+#if 0
     bool is_match_region_data(const    DetectRegionInputData rd,QPoint pnt,int distance=20)
     {
         bool ret=false;
@@ -463,7 +464,7 @@ public:
         return rd.data();
 
     }
-
+#endif
 #endif
     QPoint map_point(QPoint p)
     {
@@ -493,7 +494,8 @@ public:
 
         }
 
-#ifdef WITH_CUDA
+#if 0
+        //#ifdef WITH_CUDA
         if(processor==LABLE_PROCESSOR_PVD){
             PvdProcessorInputData data(out);
             if(data.DetectLine.size()==2){
@@ -685,11 +687,30 @@ public:
 
     }
 protected:
-    void draw_line(VdPoint s,VdPoint e)
+    //    void draw_line(VdPoint s,VdPoint e)
+    //    {
+    //        current_painter->drawLine(QPoint(s.x,s.y),QPoint(e.x,e.y));
+    //    }
+    void draw_line(VdPoint s,VdPoint e,int colour,int size)
     {
-        dev->paintEngine()
-         QPainter img_painter1(dev);
-         img_painter1.drawLine(QPoint(s.x,s.y),QPoint(e.x,e.y));
+
+        switch (colour) {
+        case DataEvent::Colour::Green:
+            current_painter->setPen(QPen(QBrush(QColor(0,255,0)),size));
+            break;
+        case DataEvent::Colour::Red:
+            current_painter->setPen(QPen(QBrush(QColor(255,0,0)),size));
+            break;
+        case DataEvent::Colour::Blue:
+            current_painter->setPen(QPen(QBrush(QColor(0,0,255)),size));
+            break;
+        default:
+            break;
+        }
+
+        QPen pen_ori=current_painter->pen();
+        current_painter->drawLine(QPoint(s.x,s.y),QPoint(e.x,e.y));
+        current_painter->setPen(pen_ori);
     }
 
     void paintEvent(QPaintEvent *)
@@ -712,6 +733,8 @@ protected:
         }
 
         QPainter img_painter(&img);
+        current_painter=&img_painter;
+
         dev=img_painter.device();
         QString fps(QString::number(output_data_fps_result));
         QString url(QString(cfg.Url.data()));
@@ -757,17 +780,22 @@ protected:
             draw_process_output( img_painter,p.SelectedProcessor, output_data.DetectionResult[i],off_x,off_y);
             get_min_point( p.ExpectedAreaVers,off_x,off_y);
             draw_process_input( img_painter,p.SelectedProcessor, p.ProcessorData,off_x,off_y);
+
+#if 0
             int selected_r=0;
             if(region_ver_picked&&i==selected_region_index-1)
                 selected_r=1;
             else
                 selected_r=0;
+
+
             draw_detect_area(vector<VdPoint>(p.ExpectedAreaVers.begin(),p.ExpectedAreaVers.end()),img_painter,selected_r);
+#endif
         }
 
         cfg.draw(bind(&PlayerWidget::draw_line,
                       this,placeholders::_1,
-                      placeholders::_2));
+                      placeholders::_2,placeholders::_3,placeholders::_4));
 
         if(!img.isNull()){
             this_painter.drawImage(QRect(0,0,this->width(),this->height()),img);
@@ -833,7 +861,7 @@ public slots:
     void hide_menu()
     {
         prt(info,"hide menu");
-        region_ver_picked=false;
+        //region_ver_picked=false;
         mn.set_checkable(false);
     }
     void right_click(QPoint pos)
@@ -851,9 +879,10 @@ public slots:
     }
     void del_region(bool)
     {
-        prt(info,"del region %d ",selected_region_index);
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
+        //        prt(info,"del region %d ",selected_region_index);
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
+        int selected_region_index=1;
         RequestPkt pkt(CameraInputData::OP::DELETE_REGION,selected_region_index,JsonPacket());
         vector <DetectRegionInputData >::iterator begin=cfg.DetectRegion.begin();
         cfg.DetectRegion.erase(begin+selected_region_index-1);
@@ -1029,6 +1058,7 @@ public slots:
     void processor_menu_selection(string processor_label)
     {
 
+        int selected_region_index=cfg.focus_index;
         if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
             return;
 
@@ -1068,39 +1098,40 @@ public slots:
     }
     void set_processor_dummy(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
 
         processor_menu_selection(LABLE_PROCESSOR_DUMMY);
     }
     void set_processor_c4(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
         processor_menu_selection(LABLE_PROCESSOR_C4);
     }
 #ifdef WITH_CUDA
     void set_processor_pvd(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
         processor_menu_selection(LABLE_PROCESSOR_PVD);
     }
     void set_processor_fvd(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
         processor_menu_selection(LABLE_PROCESSOR_FVD);
     }
     void set_processor_mvd(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
         processor_menu_selection(LABLE_PROCESSOR_MVD);
     }
 #endif
-    void set_region(bool)
+    void set_region(int index)
     {
+        int selected_region_index=index;
         prt(info,"mod region shape");
         vector <DetectRegionInputData >detect_regions;
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
@@ -1114,6 +1145,7 @@ public slots:
 
     void set_region_data(bool)
     {
+        int selected_region_index=cfg.focus_index;
         prt(info,"mod region data");
         vector <DetectRegionInputData >detect_regions;
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
@@ -1141,11 +1173,11 @@ public slots:
     void mouseMoveEvent(QMouseEvent *e)
     {
         QPoint p1=map_point(e->pos());
-
-        for(int i=0;i<cfg.DetectRegion.size();i++){
-            cfg.DetectRegion[i].process_event(QPoint_2_VdPoint(map_point(e->pos())));
-        }
-
+        cfg.process_event(QPoint_2_VdPoint((map_point(e->pos()))));
+        //        for(int i=0;i<cfg.DetectRegion.size();i++){
+        //            cfg.DetectRegion[i].process_event(QPoint_2_VdPoint(map_point(e->pos())));
+        //        }
+#if 0
         if(region_ver_picked){
             if(selected_region_index>0&&selected_point_index>0&&\
                     selected_region_index<=cfg.DetectRegion.size()){
@@ -1189,14 +1221,17 @@ public slots:
             //prt(info,"line move (%d, %d) to (%d, %d)",ori_point.x(),ori_point.y(),e->pos().x(),e->pos().y());
         }
 #endif
+#endif
     }
 
     void mousePressEvent(QMouseEvent *e)
     {
         prt(info,"mouse press");
-
+        // cfg.process_event(QPoint_2_VdPoint((map_point(e->pos()))));
+        cfg.start_event(QPoint_2_VdPoint((map_point(e->pos()))));
         vector <DetectRegionInputData >detect_regions;
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
+#if 0
         for(int i=0;i<detect_regions.size();i++){
             detect_regions[i].start_event(QPoint_2_VdPoint(map_point(e->pos())));
             // match region vers
@@ -1234,14 +1269,20 @@ public slots:
         }
         selected_point_index=0;
         selected_region_index=0;
+#endif
     }
     void mouseReleaseEvent(QMouseEvent *e)
     {
+        prt(info,"mouse release");
 
-        for(int i=0;i<cfg.DetectRegion.size();i++){
-            cfg.DetectRegion[i].end_event();
-        }
 
+        //        for(int i=0;i<cfg.DetectRegion.size();i++){
+        //            cfg.DetectRegion[i].end_event();
+        //        }
+        if(cfg.triggered)
+            set_region(cfg.focus_index);
+        cfg.end_event();
+#if 0
         prt(info,"mouse release");
         //        switch (e->button()) {
         //        case Qt::MouseButton::RightButton:
@@ -1268,12 +1309,14 @@ public slots:
             set_region_data(true);
             region_data_picked=false;
         }
+#endif
     }
     //
     void mouseDoubleClickEvent(QMouseEvent *e)
     {
 
-#ifdef WITH_CUDA
+        //#ifdef WITH_CUDA
+#if 0
         vector <DetectRegionInputData >detect_regions;
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
         for(int i=0;i<detect_regions.size();i++){
@@ -1385,14 +1428,14 @@ private:
 
     int loop;
     VideoSource *src;
-    bool region_ver_picked;
-    bool region_line_picked;
-    bool region_data_picked;
+    //    bool region_ver_picked;
+    //    bool region_line_picked;
+    //    bool region_data_picked;
 
-    int selected_region_index;
-    int selected_point_index;
-    int selected_data_index;
-    int selected_data_point_index;
+    //    int selected_region_index;
+    //    int selected_point_index;
+    //    int selected_data_index;
+    //    int selected_data_point_index;
 
     int cnt;
     QTimer *tick_timer;
@@ -1411,6 +1454,7 @@ private:
     QPoint ori_point;
 
     QPainter painter_img;
+    QPainter *current_painter;
     QPaintDevice * dev;
 #ifdef WITH_CUDA
     MvdProcessorOutputData mvd_current_data;

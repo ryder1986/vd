@@ -51,7 +51,7 @@ SOURCES += $$SRC_PATH/cppjson/json_reader.cpp $$SRC_PATH/cppjson/json_writer.cpp
 SOURCES += $$SRC_PATH/videosource.cpp
 unix{
 LIBS+=  -lopencv_core -lopencv_highgui -lopencv_objdetect \
--lopencv_imgproc -lopencv_ml -lopencv_highgui -lopencv_video -lopencv_videostab -lpthread  -lX11 #-lopencv_imgcodecs  -lopencv_videoio
+-lopencv_imgproc -lopencv_ml -lopencv_highgui -lopencv_video -lopencv_videostab -lpthread  -lX11 -lopencv_imgcodecs  -lopencv_videoio #
 LIBS+=-lavformat -lavcodec  -lavutil -lswresample
 }else{
 message(build win32)

@@ -66,7 +66,7 @@ c4common.cpp c4processor.cpp videoprocessor.cpp tool.cpp socket.cpp
 #PRE_TARGETDEPS += $$PWD/libdarknet.so
 LIBS+=-lopencv_core -lopencv_highgui -lopencv_objdetect \
 -lopencv_imgproc -lopencv_ml -lopencv_highgui\
--lopencv_video -lopencv_videostab  -lpthread# -lopencv_videoio -lopencv_imgcodecs
+-lopencv_video -lopencv_videostab  -lpthread -lopencv_videoio -lopencv_imgcodecs #
 LIBS+=-lavformat -lavcodec  -lavutil -lswresample
 QMAKE_LFLAGS+=-rdynamic
 QMAKE_CXXFLAGS +=-g -w

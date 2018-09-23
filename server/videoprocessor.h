@@ -204,7 +204,46 @@ public:
         ENCODE_JSONDATA_ARRAY_MEM(Rects);
     }
 };
-class C4ProcessorInputData:public JsonData{
+class DataEvent
+{
+public:
+    enum Colour{
+        Red,
+        Green,
+        Blue
+    };
+    enum Event{
+        VerTriggered=1,
+        VersTriggered
+    };
+    DataEvent() {
+        triggered=false;
+        focus_index=0;
+        change_type=0;
+
+    }
+public:
+    virtual bool start_event(VdPoint pnt)=0;
+    virtual bool process_event(VdPoint pnt)=0;
+    virtual void end_event()=0;
+    //  virtual void end_event()=0;
+    //    {
+    //       triggered=false;
+    //    }
+
+    //    void end_event()
+    //    {
+    //        triggered=false;
+    //    }
+public:
+    int flag;
+    bool triggered;
+    VdPoint ori_pnt;
+    int focus_index;
+    int change_type;
+};
+class C4ProcessorInputData:public JsonData,public DataEvent
+{
 public:
     double Ratio;
     int ScanStep;
@@ -232,11 +271,54 @@ public:
         ENCODE_DOUBLE_MEM(Ratio);
         ENCODE_JSONDATA_ARRAY_MEM(DetectLine);
     }
+    inline bool p_on_ver(VdPoint pnt)
+    {
+        focus_index=2;
+        return true;
+    }
 
-    void draw(function <void(VdPoint start,VdPoint end)>drawline_callback)
+    inline bool p_on_line(VdPoint pnt)
+    {
+        return true;
+    }
+
+    bool start_event(VdPoint pnt)
+    {
+        if(p_on_ver(pnt)){
+            prt(info,"c4 point triggered ");
+            triggered=true;
+            ori_pnt=pnt;
+            flag=VerTriggered;
+            return true;
+        }
+        if(p_on_line(pnt)){
+            prt(info,"c4 line triggered ");
+            triggered=true;
+            ori_pnt=pnt;
+            flag=VersTriggered;
+            return true;
+        }
+        return false;
+    }
+    bool process_event(VdPoint pnt)
+    {
+        if(triggered){
+            prt(info,"change to %d %d",pnt.x,pnt.y);
+            DetectLine[focus_index-1]=pnt;
+            encode();
+            return true;
+        }
+
+        return false;
+    }
+    void  end_event()
+    {
+        triggered=false;
+    }
+    void draw(function <void(VdPoint start,VdPoint end,int colour,int size)>drawline_callback)
     {
         if(DetectLine.size()==2)
-        drawline_callback (DetectLine[0],DetectLine[1]);
+            drawline_callback (DetectLine[0],DetectLine[1],DataEvent::Colour::Blue,2);
 
     }
 };
