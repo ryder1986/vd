@@ -170,6 +170,7 @@ public slots:
 signals:
     void action_done(int level1,int level2);
 };
+
 #ifdef WITH_OPENGL
 class PlayerWidget : public QOpenGLWidget
         #else
@@ -200,9 +201,9 @@ public:
     {
         connect(&mn,SIGNAL(action_done(int,int)),this,SLOT(handle_menu(int,int)));
         loop=0;
-        region_ver_picked=false;
-        region_line_picked=false;
-        region_data_picked=false;
+        //        region_ver_picked=false;
+        //        region_line_picked=false;
+        //        region_data_picked=false;
         cfg=data;
         frame_rate=0;
         tick_timer=new QTimer();
@@ -348,6 +349,7 @@ public:
 
     }
 #ifdef WITH_CUDA
+#if 0
     bool is_match_region_data(const    DetectRegionInputData rd,QPoint pnt,int distance=20)
     {
         bool ret=false;
@@ -462,23 +464,38 @@ public:
         return rd.data();
 
     }
-
+#endif
 #endif
     QPoint map_point(QPoint p)
     {
         return QPoint(p.x()*img.width()/this->width(),p.y()*img.height()/this->height());
+    }
+    inline VdPoint QPoint_2_VdPoint(QPoint p)
+    {
+        return VdPoint(p.x(),p.y());
     }
     void draw_process_input(QPainter &pt,string processor,JsonPacket out,int &offset_x,int &offset_y)
     {
         pt.setPen(blue_pen2());
 
         if(processor==LABLE_PROCESSOR_C4){
+#if 0
+            C4ProcessorInputData data(out);
+            if(data.DetectLine.size()==2){
+                VdPoint point_begin=data.DetectLine[0];
+                QPoint pb(point_begin.x+offset_x,point_begin.y+offset_y);
+                VdPoint end_begin=data.DetectLine[1];
+                QPoint pe(end_begin.x+offset_x,end_begin.y+offset_y);
+                pt.drawLine(pb,pe);
+            }
+#endif
         }
         if(processor==LABLE_PROCESSOR_DUMMY){
 
         }
 
-#ifdef WITH_CUDA
+#if 0
+        //#ifdef WITH_CUDA
         if(processor==LABLE_PROCESSOR_PVD){
             PvdProcessorInputData data(out);
             if(data.DetectLine.size()==2){
@@ -509,14 +526,17 @@ public:
             bool highlight=false;
             for(LaneDataJsonData r: data.LaneData)
             {
-                if(mvd_current_data.LaneOutputData.size()>0)
-                    if(mvd_current_data.LaneOutputData[lane_loop-1].FarCarExist){
-                        //prt(info,"######## far car exit");
-                    }
+                //                if(!mvd_current_data.LaneOutputData.size())
+                //                    continue;
+                //                if(mvd_current_data.LaneOutputData.size()>0)
+                //                    if(mvd_current_data.LaneOutputData[lane_loop-1].FarCarExist){
+                //                        //prt(info,"######## far car exit");
+                //                    }
                 QVector<QPoint> ps;
-
-                if((region_data_picked&&lane_index==lane_loop&&point_index<=12&&point_index>8)||(lane_index==lane_loop&&mvd_current_data.LaneOutputData[lane_loop-1].FarCarExist))
-                    highlight=true;
+                if(mvd_current_data.LaneOutputData.size()==data.LaneData.size())
+                    if((region_data_picked&&lane_index==lane_loop&&point_index<=12&&point_index>8)||
+                            (lane_index==lane_loop&&mvd_current_data.LaneOutputData[lane_loop-1].FarCarExist))
+                        highlight=true;
                 for(VdPoint v:r.FarArea){ps.push_back(QPoint(v.x+offset_x,v.y+offset_y));  pt.setPen(red_pen2());pt.drawEllipse(QPoint(v.x+offset_x,v.y+offset_y),1,1);pt.setPen(blue_pen4());}
                 if(highlight){
                     pt.setPen(red_pen2());
@@ -531,8 +551,9 @@ public:
                 highlight=false;
 
                 for(VdPoint v:r.NearArea){ps.push_back(QPoint(v.x+offset_x,v.y+offset_y));pt.setPen(red_pen2());pt.drawEllipse(QPoint(v.x+offset_x,v.y+offset_y),1,1);pt.setPen(blue_pen4());}
-                if((region_data_picked&&lane_index==lane_loop&&point_index<=8&&point_index>4)||(lane_index==lane_loop&&mvd_current_data.LaneOutputData[lane_loop-1].NearCarExist))
-                    highlight=true;
+                if(mvd_current_data.LaneOutputData.size()==data.LaneData.size())
+                    if((region_data_picked&&lane_index==lane_loop&&point_index<=8&&point_index>4)||(lane_index==lane_loop&&mvd_current_data.LaneOutputData[lane_loop-1].NearCarExist))
+                        highlight=true;
                 if(highlight){
                     pt.setPen(red_pen2());
                     // prt(info,"highlight near");
@@ -547,9 +568,9 @@ public:
 
 
                 for(VdPoint v:r.LaneArea){ps.push_back(QPoint(v.x+offset_x,v.y+offset_y));pt.setPen(red_pen2());pt.drawEllipse(QPoint(v.x+offset_x,v.y+offset_y),1,1);pt.setPen(blue_pen4());}
-
-                if(region_data_picked&&lane_index==lane_loop&&point_index<=4&&point_index>0)
-                    highlight=true;
+                if(mvd_current_data.LaneOutputData.size()==data.LaneData.size())
+                    if(region_data_picked&&lane_index==lane_loop&&point_index<=4&&point_index>0)
+                        highlight=true;
                 if(highlight){
                     pt.setPen(red_pen2());
                     // prt(info,"highlight lane");
@@ -666,6 +687,32 @@ public:
 
     }
 protected:
+    //    void draw_line(VdPoint s,VdPoint e)
+    //    {
+    //        current_painter->drawLine(QPoint(s.x,s.y),QPoint(e.x,e.y));
+    //    }
+    void draw_line(VdPoint s,VdPoint e,int colour,int size)
+    {
+
+        switch (colour) {
+        case DataEvent::Colour::Green:
+            current_painter->setPen(QPen(QBrush(QColor(0,255,0)),size));
+            break;
+        case DataEvent::Colour::Red:
+            current_painter->setPen(QPen(QBrush(QColor(255,0,0)),size));
+            break;
+        case DataEvent::Colour::Blue:
+            current_painter->setPen(QPen(QBrush(QColor(0,0,255)),size));
+            break;
+        default:
+            break;
+        }
+
+        QPen pen_ori=current_painter->pen();
+        current_painter->drawLine(QPoint(s.x,s.y),QPoint(e.x,e.y));
+        current_painter->setPen(pen_ori);
+    }
+
     void paintEvent(QPaintEvent *)
     {
         lock.lock();
@@ -686,6 +733,9 @@ protected:
         }
 
         QPainter img_painter(&img);
+        current_painter=&img_painter;
+
+        dev=img_painter.device();
         QString fps(QString::number(output_data_fps_result));
         QString url(QString(cfg.Url.data()));
         img_painter.setPen(blue_pen3());
@@ -725,17 +775,27 @@ protected:
                 break;
 
             }
-            int tmpx,tmpy;
+            int off_x,off_y;
 
-            draw_process_output( img_painter,p.SelectedProcessor, output_data.DetectionResult[i],tmpx,tmpy);
-            draw_process_input( img_painter,p.SelectedProcessor, p.ProcessorData,tmpx,tmpy);
+            draw_process_output( img_painter,p.SelectedProcessor, output_data.DetectionResult[i],off_x,off_y);
+            get_min_point( p.ExpectedAreaVers,off_x,off_y);
+            draw_process_input( img_painter,p.SelectedProcessor, p.ProcessorData,off_x,off_y);
+
+#if 0
             int selected_r=0;
             if(region_ver_picked&&i==selected_region_index-1)
                 selected_r=1;
             else
                 selected_r=0;
+
+
             draw_detect_area(vector<VdPoint>(p.ExpectedAreaVers.begin(),p.ExpectedAreaVers.end()),img_painter,selected_r);
+#endif
         }
+
+        cfg.draw(bind(&PlayerWidget::draw_line,
+                      this,placeholders::_1,
+                      placeholders::_2,placeholders::_3,placeholders::_4));
 
         if(!img.isNull()){
             this_painter.drawImage(QRect(0,0,this->width(),this->height()),img);
@@ -777,20 +837,20 @@ public slots:
         if(level2){
             switch(level2){
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_C4:
-                set_processor(LABLE_PROCESSOR_C4);
+                processor_menu_selection(LABLE_PROCESSOR_C4);
                 break;
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_DUMMY:
-                set_processor(LABLE_PROCESSOR_DUMMY);
+                processor_menu_selection(LABLE_PROCESSOR_DUMMY);
                 break;
 #ifdef WITH_CUDA
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_FVD:
-                set_processor(LABLE_PROCESSOR_FVD);
+                processor_menu_selection(LABLE_PROCESSOR_FVD);
                 break;
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_PVD:
-                set_processor(LABLE_PROCESSOR_PVD);
+                processor_menu_selection(LABLE_PROCESSOR_PVD);
                 break;
             case PlayerWidgetMenu::MOD_REGION_PROCESSOR_TO_MVD:
-                set_processor(LABLE_PROCESSOR_MVD);
+                processor_menu_selection(LABLE_PROCESSOR_MVD);
                 break;
 #endif
             default:break;
@@ -800,8 +860,8 @@ public slots:
     }
     void hide_menu()
     {
-            prt(info,"hide menu");
-        region_ver_picked=false;
+        prt(info,"hide menu");
+        //region_ver_picked=false;
         mn.set_checkable(false);
     }
     void right_click(QPoint pos)
@@ -812,32 +872,28 @@ public slots:
     {
         DetectRegionInputData drid( get_region_test_data(get_dummy_test_data().data(),LABLE_PROCESSOR_DUMMY));
         vector <DetectRegionInputData >::iterator begin=cfg.DetectRegion.begin();
-
-        RequestPkt pkt(
-                    Camera::OP::INSERT_REGION,cfg.DetectRegion.size(),
-                    drid.data()
-                    );
+        RequestPkt pkt(CameraInputData::OP::INSERT_REGION,cfg.DetectRegion.size(),drid.data());
         cfg.DetectRegion.insert(begin+cfg.DetectRegion.size(),drid.data());
-
-        signal_camera(this,Camera::OP::INSERT_REGION,pkt.data());
+        signal_camera(this,CameraInputData::OP::INSERT_REGION,pkt.data());
         prt(info,"add region");
     }
     void del_region(bool)
     {
-        prt(info,"del region %d ",selected_region_index);
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
-        RequestPkt pkt(Camera::OP::DELETE_REGION,selected_region_index,JsonPacket());
+        //        prt(info,"del region %d ",selected_region_index);
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
+        int selected_region_index=1;
+        RequestPkt pkt(CameraInputData::OP::DELETE_REGION,selected_region_index,JsonPacket());
         vector <DetectRegionInputData >::iterator begin=cfg.DetectRegion.begin();
         cfg.DetectRegion.erase(begin+selected_region_index-1);
 
-        signal_camera(this,Camera::OP::DELETE_REGION,pkt.data());
+        signal_camera(this,CameraInputData::OP::DELETE_REGION,pkt.data());
     }
 
     void set_url(bool)
     {
         JsonPacket p;
-        signal_camera(this,Camera::OP::CHANGE_URL,p);
+        signal_camera(this,CameraInputData::OP::CHANGE_URL,p);
 
     }
 #ifdef WITH_CUDA
@@ -993,11 +1049,16 @@ public slots:
     }
     static C4ProcessorInputData get_c4_test_data()
     {
-        C4ProcessorInputData d(8,0.7);   return d;
+        vector <VdPoint> ps;
+        ps.push_back(VdPoint(100,100));
+        ps.push_back(VdPoint(200,200));
+        C4ProcessorInputData d(8,0.7,ps);
+        return d;
     }
-    void set_processor(string processor_label)
+    void processor_menu_selection(string processor_label)
     {
 
+        int selected_region_index=cfg.focus_index;
         if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
             return;
 
@@ -1023,11 +1084,13 @@ public slots:
             processor_pkt=get_mvd_test_data().data();
         }
 #endif
+        ///// change remote config
         ProcessorDataJsonDataRequest pd(processor_label,processor_pkt);
         RequestPkt req(DetectRegion::OP::CHANGE_PROCESSOR,0,pd.data());
-        RequestPkt pkt(Camera::OP::MODIFY_REGION,selected_region_index,req.data());
-        signal_camera(this,Camera::OP::MODIFY_REGION,pkt.data());
-        //////////
+        RequestPkt pkt(CameraInputData::OP::MODIFY_REGION,selected_region_index,req.data());
+        signal_camera(this,CameraInputData::OP::MODIFY_REGION,pkt.data());
+
+        ///// change local config
         DetectRegionInputData di= cfg.DetectRegion[selected_region_index-1];
         di.set_processor(processor_label,processor_pkt);
         cfg.set_region(di.data(),selected_region_index);
@@ -1035,39 +1098,40 @@ public slots:
     }
     void set_processor_dummy(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
 
-        set_processor(LABLE_PROCESSOR_DUMMY);
+        processor_menu_selection(LABLE_PROCESSOR_DUMMY);
     }
     void set_processor_c4(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
-        set_processor(LABLE_PROCESSOR_C4);
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
+        processor_menu_selection(LABLE_PROCESSOR_C4);
     }
 #ifdef WITH_CUDA
     void set_processor_pvd(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
-        set_processor(LABLE_PROCESSOR_PVD);
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
+        processor_menu_selection(LABLE_PROCESSOR_PVD);
     }
     void set_processor_fvd(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
-        set_processor(LABLE_PROCESSOR_FVD);
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
+        processor_menu_selection(LABLE_PROCESSOR_FVD);
     }
     void set_processor_mvd(bool checked)
     {
-        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
-            return;
-        set_processor(LABLE_PROCESSOR_MVD);
+        //        if(selected_region_index<1||selected_region_index>cfg.DetectRegion.size())
+        //            return;
+        processor_menu_selection(LABLE_PROCESSOR_MVD);
     }
 #endif
-    void set_region(bool)
+    void set_region(int index)
     {
+        int selected_region_index=index;
         prt(info,"mod region shape");
         vector <DetectRegionInputData >detect_regions;
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
@@ -1075,19 +1139,20 @@ public slots:
         vector <VdPoint  > vers=tmp.ExpectedAreaVers;
         AreaVersJsonDataRequest vs(vers);
         RequestPkt r_pkt(DetectRegion::OP::CHANGE_RECT,0,vs.data());
-        RequestPkt pkt(Camera::OP::MODIFY_REGION,selected_region_index,r_pkt.data());
-        signal_camera(this,Camera::OP::MODIFY_REGION,pkt.data());
+        RequestPkt pkt(CameraInputData::OP::MODIFY_REGION,selected_region_index,r_pkt.data());
+        signal_camera(this,CameraInputData::OP::MODIFY_REGION,pkt.data());
     }
 
     void set_region_data(bool)
     {
+        int selected_region_index=cfg.focus_index;
         prt(info,"mod region data");
         vector <DetectRegionInputData >detect_regions;
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
         DetectRegionInputData tmp=detect_regions[selected_region_index-1];
         RequestPkt r_pkt(DetectRegion::OP::MODIFY_PROCESSOR,0,tmp.ProcessorData);
-        RequestPkt pkt(Camera::OP::MODIFY_REGION,selected_region_index,r_pkt.data());
-        signal_camera(this,Camera::OP::MODIFY_REGION,pkt.data());
+        RequestPkt pkt(CameraInputData::OP::MODIFY_REGION,selected_region_index,r_pkt.data());
+        signal_camera(this,CameraInputData::OP::MODIFY_REGION,pkt.data());
     }
 
     void timeout()
@@ -1108,6 +1173,11 @@ public slots:
     void mouseMoveEvent(QMouseEvent *e)
     {
         QPoint p1=map_point(e->pos());
+        cfg.process_event(QPoint_2_VdPoint((map_point(e->pos()))));
+        //        for(int i=0;i<cfg.DetectRegion.size();i++){
+        //            cfg.DetectRegion[i].process_event(QPoint_2_VdPoint(map_point(e->pos())));
+        //        }
+#if 0
         if(region_ver_picked){
             if(selected_region_index>0&&selected_point_index>0&&\
                     selected_region_index<=cfg.DetectRegion.size()){
@@ -1151,14 +1221,19 @@ public slots:
             //prt(info,"line move (%d, %d) to (%d, %d)",ori_point.x(),ori_point.y(),e->pos().x(),e->pos().y());
         }
 #endif
+#endif
     }
 
     void mousePressEvent(QMouseEvent *e)
     {
         prt(info,"mouse press");
+        // cfg.process_event(QPoint_2_VdPoint((map_point(e->pos()))));
+        cfg.start_event(QPoint_2_VdPoint((map_point(e->pos()))));
         vector <DetectRegionInputData >detect_regions;
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
+#if 0
         for(int i=0;i<detect_regions.size();i++){
+            detect_regions[i].start_event(QPoint_2_VdPoint(map_point(e->pos())));
             // match region vers
             vector <VdPoint> pnts(detect_regions[i].ExpectedAreaVers.begin(),detect_regions[i].ExpectedAreaVers.end());
             int point_index=p_on_vs(pnts,map_point(e->pos()));
@@ -1194,17 +1269,28 @@ public slots:
         }
         selected_point_index=0;
         selected_region_index=0;
+#endif
     }
     void mouseReleaseEvent(QMouseEvent *e)
     {
         prt(info,"mouse release");
-//        switch (e->button()) {
-//        case Qt::MouseButton::RightButton:
-//        {prt(info,"right button");}
-//            break;
-//        default:
-//            break;
-//        }
+
+
+        //        for(int i=0;i<cfg.DetectRegion.size();i++){
+        //            cfg.DetectRegion[i].end_event();
+        //        }
+        if(cfg.triggered)
+            set_region(cfg.focus_index);
+        cfg.end_event();
+#if 0
+        prt(info,"mouse release");
+        //        switch (e->button()) {
+        //        case Qt::MouseButton::RightButton:
+        //        {prt(info,"right button");}
+        //            break;
+        //        default:
+        //            break;
+        //        }
         if(region_ver_picked&&(e->button()==Qt::MouseButton::LeftButton)){
             emit cam_data_change(cfg,this);
             set_region(true);
@@ -1223,12 +1309,14 @@ public slots:
             set_region_data(true);
             region_data_picked=false;
         }
+#endif
     }
-//
+    //
     void mouseDoubleClickEvent(QMouseEvent *e)
     {
 
-#ifdef WITH_CUDA
+        //#ifdef WITH_CUDA
+#if 0
         vector <DetectRegionInputData >detect_regions;
         detect_regions.assign(cfg.DetectRegion.begin(),cfg.DetectRegion.end());
         for(int i=0;i<detect_regions.size();i++){
@@ -1274,7 +1362,7 @@ public slots:
         else
             emit click_event(this,ClickEvent::SHOW_ALL);
     }
-//
+    //
 private:
     int double_click_flag;
     QPen blue_pen1()
@@ -1340,18 +1428,14 @@ private:
 
     int loop;
     VideoSource *src;
-    bool region_ver_picked;
-    bool region_line_picked;
-    bool region_data_picked;
+    //    bool region_ver_picked;
+    //    bool region_line_picked;
+    //    bool region_data_picked;
 
-
-    QPoint ori_point;
-    QPoint maped_point;
-
-    int selected_region_index;
-    int selected_point_index;
-    int selected_data_index;
-    int selected_data_point_index;
+    //    int selected_region_index;
+    //    int selected_point_index;
+    //    int selected_data_index;
+    //    int selected_data_point_index;
 
     int cnt;
     QTimer *tick_timer;
@@ -1367,7 +1451,11 @@ private:
     int paint_tick;
     int paint_tick_old;
 
+    QPoint ori_point;
 
+    QPainter painter_img;
+    QPainter *current_painter;
+    QPaintDevice * dev;
 #ifdef WITH_CUDA
     MvdProcessorOutputData mvd_current_data;
 #endif

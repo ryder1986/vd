@@ -9,7 +9,8 @@
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 SRC_PATH =../server
-#CONFIG+=WITH_CUDA
+CONFIG+=WITH_CUDA
+ DEFINES+=WITH_OPENGL
 #WITH_CUDA{
 #    DEFINES+=WITH_CUDA
 #}
@@ -50,7 +51,7 @@ SOURCES += $$SRC_PATH/cppjson/json_reader.cpp $$SRC_PATH/cppjson/json_writer.cpp
 SOURCES += $$SRC_PATH/videosource.cpp
 unix{
 LIBS+=  -lopencv_core -lopencv_highgui -lopencv_objdetect \
--lopencv_imgproc -lopencv_ml -lopencv_highgui -lopencv_video -lopencv_videostab -lpthread  -lX11 -lopencv_imgcodecs  -lopencv_videoio #
+-lopencv_imgproc -lopencv_ml -lopencv_highgui -lopencv_video -lopencv_videostab -lpthread  -lX11# -lopencv_imgcodecs  -lopencv_videoio #
 LIBS+=-lavformat -lavcodec  -lavutil -lswresample
 }else{
 message(build win32)

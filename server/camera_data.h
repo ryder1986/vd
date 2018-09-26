@@ -3,9 +3,15 @@
 #include "tool.h"
 #include "jsonpacket.h"
 #include "detectregion_data.h"
-class CameraInputData:public JsonData
+class CameraInputData:public JsonData,public DataEvent
 {
 public:
+    enum OP{
+        CHANGE_URL=1,
+        INSERT_REGION,
+        DELETE_REGION,
+        MODIFY_REGION
+    };
     string Url;
     vector <DetectRegionInputData >DetectRegion;
     CameraInputData(JsonPacket pkt):JsonData(pkt)
@@ -55,6 +61,50 @@ public:
     {
         ENCODE_STRING_MEM(Url);
         ENCODE_JSONDATA_ARRAY_MEM(DetectRegion);
+    }
+    virtual bool start_event(VdPoint pnt)
+    {
+        int i=0;
+        for( i=0;i<DetectRegion.size();i++){
+
+            if(DetectRegion[i].start_event(pnt)){
+                triggered=true;
+                focus_index=i+1;
+                return true;
+            }
+
+        }
+        return false;
+    }
+    virtual bool process_event(VdPoint pnt)
+    {
+        if(!triggered)
+            return false;
+        int i=0;
+        int sz=DetectRegion.size();
+        for(i=0;i<sz;i++){
+            bool ret=DetectRegion[i].process_event(pnt);
+            if(ret)
+                focus_index=i+1;
+        }
+        return true;
+    }
+    void end_event()
+    {
+        int i=0;
+        for( i=0;i<DetectRegion.size();i++){
+            DetectRegion[i].end_event();
+        }
+
+    }
+    void draw(function <void(VdPoint start,VdPoint end,int colour,int size)>drawline_callback)
+    {
+        int i=0;
+        int sz=DetectRegion.size();
+        for(i=0;i<sz;i++){
+            DetectRegionInputData dr=DetectRegion[i];
+            dr.draw(drawline_callback);
+        }
     }
 };
 

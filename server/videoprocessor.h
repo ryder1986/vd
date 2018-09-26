@@ -1,22 +1,16 @@
 #ifndef VIDEOPROCESSOR_H
 #define VIDEOPROCESSOR_H
-
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-//#include <opencv2/video/video.hpp>
 #include <opencv2/ml/ml.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
-
-
 #include "tool.h"
 #include "datapacket.h"
 using namespace std;
 using namespace cv;
 #define LABLE_PROCESSOR_C4 "C4"
 #define LABLE_PROCESSOR_DUMMY "Dummy"
-
 #ifdef WITH_CUDA
 #define LABLE_PROCESSOR_PVD "Pvd"
 #define LABLE_PROCESSOR_FVD "Fvd"
@@ -29,13 +23,11 @@ typedef struct args{
     Rect area;
     int no;
     string ratio;
-
 }arg_t;
 }
 using namespace VideoProcessorNS;
 class VideoProcessor
 {
-
 protected:
     //  arg_t arg;
 public:
@@ -80,37 +72,15 @@ public:
     DataPacket get_config()
     {
         DataPacket pkt;
-        //        pkt.set_int("step",private_data.scan_step);
-        //        pkt.set_string("ratio",f2string(private_data.scale_ratio));
         return pkt;
     }
-    //    virtual  bool process( Mat img)
-    //    {
-    //        return false;
-    //    }
-    //    virtual  bool process( int t)
-    //    {
-    //        return false;
-    //    }
-    //    virtual bool process(Mat img_src,vector<Rect> &rects)
-    //    {
 
-    //    }
     virtual bool process(Mat img_src,JsonPacket &pkt)=0;
 
     virtual bool process_whole_pic(Mat img_src,JsonPacket &pkt,Rect rct)
     {
 
     }
-
-    //    {
-    //        prt(info,"actual processor needed");
-    //    }
-    //    virtual bool process(Mat img_src,vector<Rect> &rects,Rect detect_area)
-    //    {
-
-    //        return false;
-    //    }
 
     virtual  string get_rst()
     {
@@ -122,12 +92,6 @@ public:
     {
     }
 
-    //    DataPacket get_config()
-    //    {
-    //        DataPacket ret;
-    //        encode(ret);
-    //        return ret;
-    //    }
     Rect area_2_rect(vector<DataPacket> area)
     {
         int x_min=10000;
@@ -137,8 +101,6 @@ public:
         for(DataPacket pkt: area) {
             int x=pkt.get_int("x");
             int y=pkt.get_int("y");
-            //              int x= v.toObject()["x"].toInt();
-            //            int y= v.toObject()["y"].toInt();
             if(x<x_min)
                 x_min=x;
             if(x>x_max)
@@ -156,9 +118,6 @@ protected:
 private:
 
 };
-
-
-
 
 class DummyProcessorOutputData:public JsonData{
 
@@ -245,11 +204,50 @@ public:
         ENCODE_JSONDATA_ARRAY_MEM(Rects);
     }
 };
-class C4ProcessorInputData:public JsonData{
-
+class DataEvent
+{
 public:
-    double ratio;
-    int scan_step;
+    enum Colour{
+        Red,
+        Green,
+        Blue
+    };
+    enum Event{
+        VerTriggered=1,
+        VersTriggered
+    };
+    DataEvent() {
+        triggered=false;
+        focus_index=0;
+        change_type=0;
+
+    }
+public:
+    virtual bool start_event(VdPoint pnt)=0;
+    virtual bool process_event(VdPoint pnt)=0;
+    virtual void end_event()=0;
+    //  virtual void end_event()=0;
+    //    {
+    //       triggered=false;
+    //    }
+
+    //    void end_event()
+    //    {
+    //        triggered=false;
+    //    }
+public:
+    int flag;
+    bool triggered;
+    VdPoint ori_pnt;
+    int focus_index;
+    int change_type;
+};
+class C4ProcessorInputData:public JsonData,public DataEvent
+{
+public:
+    double Ratio;
+    int ScanStep;
+    vector <VdPoint> DetectLine;
     C4ProcessorInputData()
     {
     }
@@ -257,19 +255,118 @@ public:
     {
         decode();
     }
-    C4ProcessorInputData(int st,double ra):scan_step(st),ratio(ra)
+    void set_pkt(JsonPacket p)
+    {
+            config=p;
+            decode();
+    }
+
+    JsonPacket get_pkt()
+    {
+         return    config;
+
+    }
+    C4ProcessorInputData(int st,double ra,vector <VdPoint> dl):ScanStep(st),Ratio(ra),DetectLine(dl)
     {
         encode();
     }
     void decode()
     {
-        DECODE_INT_MEM(scan_step);
-        DECODE_DOUBLE_MEM(ratio);
+        DECODE_INT_MEM(ScanStep);
+        DECODE_DOUBLE_MEM(Ratio);
+        DECODE_JSONDATA_ARRAY_MEM(DetectLine);
     }
     void encode()
     {
-        ENCODE_INT_MEM(scan_step);
-        ENCODE_DOUBLE_MEM(ratio);
+        ENCODE_INT_MEM(ScanStep);
+        ENCODE_DOUBLE_MEM(Ratio);
+        ENCODE_JSONDATA_ARRAY_MEM(DetectLine);
+    }
+    inline int p_on_v(const vector <VdPoint> points,VdPoint p,int distance=20)
+    {
+        for(int i=0;i<points.size();i++){
+            if(abs(points[i].x-p.x)<distance&&(abs(points[i].y-p.y))<distance){
+                return (i+1);
+            }
+        }
+        return 0;
+    }
+    inline bool p_on_l(VdPoint b,VdPoint e, VdPoint dst)
+    {
+        bool v1= (((dst.x<b.x+10)||(dst.x<e.x+10))&&((dst.x>b.x-10)||(dst.x>e.x-10)));
+        bool v2=(  ((dst.y<b.y+10)||(dst.y<e.y+10))&&((dst.y>b.y-10)||(dst.y>e.y-10)));
+        bool v3= (abs(((dst.x-e.x)*(dst.y-b.y))-((dst.y-e.y)*(dst.x-b.x)))<1000);
+        if(v1&&v2&&v3)
+            return true;
+        else
+            return false;
+    }
+
+    inline bool p_on_ver(VdPoint pnt)
+    {
+
+        if((focus_index=p_on_v(DetectLine,pnt))>0)
+            return true;
+        else
+            return false;
+    }
+
+    inline bool p_on_line(VdPoint pnt)
+    {
+
+        bool ret;
+        ret=p_on_l(DetectLine[0],DetectLine[1],pnt);
+        return ret;
+    }
+//    inline bool p_on_ver(VdPoint pnt)
+//    {
+//        focus_index=2;
+//        return true;
+//    }
+
+//    inline bool p_on_line(VdPoint pnt)
+//    {
+//        return true;
+//    }
+
+    bool start_event(VdPoint pnt)
+    {
+        if(p_on_ver(pnt)){
+            prt(info,"c4 point triggered ");
+            triggered=true;
+            ori_pnt=pnt;
+            flag=VerTriggered;
+            return true;
+        }
+        if(p_on_line(pnt)){
+            prt(info,"c4 line triggered ");
+            triggered=true;
+            ori_pnt=pnt;
+            flag=VersTriggered;
+            return true;
+        }
+        return false;
+    }
+    bool process_event(VdPoint pnt)
+    {
+        if(triggered){
+            prt(info,"c 4change to %d %d",pnt.x,pnt.y);
+            DetectLine[focus_index-1]=pnt;
+            encode();
+            return true;
+        }
+
+        return false;
+    }
+    void  end_event()
+    {
+        triggered=false;
+    }
+    void draw(function <void(VdPoint start,VdPoint end,int colour,int size)>drawline_callback)
+    {
+        if(DetectLine.size()==2)
+            drawline_callback (DetectLine[0],DetectLine[1],DataEvent::Colour::Blue,2);
+
     }
 };
 
@@ -381,8 +478,6 @@ public:
 class LaneDataJsonData:public JsonData{
 public:
     int LaneNo;// lane name index;
-
-
     vector <VdPoint> LaneArea; // whole rect
     vector <VdPoint> NearArea; // near rect
     vector <VdPoint> FarArea; // far rect

@@ -451,6 +451,7 @@ public:
     }
 };
 
+
 #define DECODE_INT_MEM(mem) {this->mem=config.get(#mem).to_int();}
 #define DECODE_STRING_MEM(mem) {this->mem=config.get(#mem).to_string();}
 #define DECODE_DOUBLE_MEM(mem) {this->mem=config.get(#mem).to_double();}

@@ -1,20 +1,25 @@
 include(common.pri)
-#CONFIG+=WITH_CUDA
+CONFIG+=WITH_CUDA
 
 WITH_CUDA{
     DEFINES+=WITH_CUDA
-    LIBS+=-L/lib -ldarknet
+    WITH_VIDEO_CARD{
+        LIBS+=-L/lib -ldarknet
+        DEFINES+=WITH_VIDEO_CARD
+    INCLUDEPATH+=/usr/include/python2.7
+    LIBS+=-lpython2.7
+    }else{
+        message(dummy video card)
+    }
     HEADERS+= fvdprocessor.h \
     pvdprocessor.h    mvdprocessor.h
     SOURCES+= fvdprocessor.cpp \
     pvdprocessor.cpp
-    INCLUDEPATH+=/usr/include/python2.7
-    LIBS+=-lpython2.7
 }else{
     #message("no cuda")
     # LIBS+=-lopencv_imgcodecs
 }
-CONFIG +=console
+CONFIG +=console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 TEMPLATE = app
@@ -61,7 +66,7 @@ c4common.cpp c4processor.cpp videoprocessor.cpp tool.cpp socket.cpp
 #PRE_TARGETDEPS += $$PWD/libdarknet.so
 LIBS+=-lopencv_core -lopencv_highgui -lopencv_objdetect \
 -lopencv_imgproc -lopencv_ml -lopencv_highgui\
--lopencv_video -lopencv_videostab  -lpthread -lopencv_videoio -lopencv_imgcodecs
+-lopencv_video -lopencv_videostab  -lpthread# -lopencv_videoio -lopencv_imgcodecs
 LIBS+=-lavformat -lavcodec  -lavutil -lswresample
 QMAKE_LFLAGS+=-rdynamic
 QMAKE_CXXFLAGS +=-g -w
